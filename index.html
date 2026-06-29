@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Game</title>
+  <link rel="shortcut icon" href="philosoph.png" type="image/x-icon">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google tag (gtag.js) -->
+
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    primary: {
+                        light: '#4f46e5',
+                        dark: '#7c73e6'
+                    },
+                    secondary: {
+                        light: '#10b981',
+                        dark: '#34d399'
+                    }
+                },
+                animation: {
+                    'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                },
+                backgroundImage: {
+                    'colorful-glass': 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 25%, #fbc2eb 50%, #fcb69f 75%, #a1c4fd 100%)',
+                    'colorful-glass-dark': 'linear-gradient(135deg, #232526 0%, #414345 25%, #434343 50%, #232526 75%, #232526 100%)'
+                }
+            }
+        }
+    }
+</script>
+<style>
+    body {
+        background-image: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 25%, #fbc2eb 50%, #fcb69f 75%, #a1c4fd 100%);
+    }
+    .dark body {
+        background-image: linear-gradient(135deg, #232526 0%, #414345 25%, #434343 50%, #232526 75%, #232526 100%);
+    }
+    .glass {
+        background: rgba(255,255,255,0.25);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border-radius: 1.5rem;
+        border: 1px solid rgba(255,255,255,0.18);
+    }
+    .dark .glass {
+        background: rgba(30, 41, 59, 0.35);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.22);
+        border: 1px solid rgba(255,255,255,0.10);
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+    .option-selected {
+        transform: scale(0.98);
+    }
+    .fill-input {
+        background: rgba(255,255,255,0.5);
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        margin: 0 0.25rem;
+    }
+    .dark .fill-input {
+        background: rgba(0,0,0,0.2);
+        border-color: rgba(255,255,255,0.1);
+    }
+</style>
+</head>
+<body class="bg-transparent dark:bg-transparent text-gray-800 dark:text-gray-200 transition-colors duration-300 flex items-center justify-center min-h-screen p-4">
+<div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none">
+    <div class="w-full h-full bg-gradient-to-br from-blue-400 via-pink-200 to-yellow-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 opacity-80"></div>
+</div>
+
+<div class="fixed top-4 right-4">
+    <button id="theme-toggle" class="p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+        <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+    </button>
+</div>
+
+<div id="start-screen" class="glass bg-white/60 dark:bg-gray-800/60 p-8 rounded-xl shadow-xl w-full max-w-md fade-in">
+    <div class="text-center mb-6">
+        <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark bg-clip-text text-transparent">QuizMaster</h1>
+        <p class="text-gray-600 dark:text-gray-400">Test your knowledge across various tech topics</p>
+    </div>
+    
+    <div class="mb-6">
+        <label for="question-count" class="block mb-2 font-medium">Number of questions (50-100):</label>
+        <input type="range" id="question-count" min="50" max="100" value="50" class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer">
+        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <span>50</span>
+            <span id="count-display" class="font-bold text-primary-light dark:text-primary-dark">50</span>
+            <span>100</span>
+        </div>
+    </div>
+    
+    <div class="mb-6">
+        <label class="block mb-2 font-medium">Select categories:</label>
+        <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" class="category-checkbox" value="HTML" checked>
+                <span>HTML</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" class="category-checkbox" value="CSS" checked>
+                <span>CSS</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" class="category-checkbox" value="JavaScript" checked>
+                <span>JavaScript</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" class="category-checkbox" value="Web History" checked>
+                <span>Web History</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" class="category-checkbox" value="Networking" checked>
+                <span>Networking</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" class="category-checkbox" value="Web Concepts" checked>
+                <span>Web Concepts</span>
+            </label>
+             <label class="flex items-center space-x-2">
+                <input type="checkbox" class="category-checkbox" value="Bootstrap" checked>
+                <span>Bootstrap</span>
+            </label>
+        </div>
+    </div>
+    
+    <button id="start-btn" class="w-full bg-primary-light dark:bg-primary-dark text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+        </svg>
+        <span>Start Quiz</span>
+    </button>
+</div>
+
+<div id="quiz-screen" class="hidden glass bg-white/60 dark:bg-gray-800/60 p-6 rounded-xl shadow-xl w-full max-w-2xl">
+    <div class="flex flex-col space-y-4 mb-6">
+        <div class="flex justify-between items-center">
+            <div class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Question <span id="current-question" class="font-bold text-primary-light dark:text-primary-dark">1</span> 
+                of <span id="total-questions" class="font-bold">50</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-sm font-medium flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span id="timer">30:00</span>
+                </div>
+                <div class="text-sm font-medium flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span id="score">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+            <div id="progress-bar" class="progress-bar bg-primary-light dark:bg-primary-dark h-2.5 rounded-full" style="width: 0%"></div>
+        </div>
+        
+        <div class="text-xs font-medium text-secondary-light dark:text-secondary-dark" id="question-category"></div>
+    </div>
+    
+    <h2 id="question" class="text-xl font-semibold mb-6"></h2>
+    
+    <div id="options" class="grid gap-3 mb-6"></div>
+    
+    <div class="flex justify-between">
+        <button id="skip-btn" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+            Skip
+        </button>
+        <button id="next-btn" class="bg-primary-light dark:bg-primary-dark text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity hidden">
+            Next
+        </button>
+    </div>
+</div>
+
+<div id="result-screen" class="hidden glass bg-white/60 dark:bg-gray-800/60 p-8 rounded-xl shadow-xl w-full max-w-md text-center fade-in">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold mb-2">Quiz Completed!</h1>
+        <p class="text-gray-600 dark:text-gray-400">You've tested your knowledge across <span id="categories-completed"></span> categories</p>
+    </div>
+    
+    <div class="bg-gray-100/70 dark:bg-gray-700/70 rounded-xl p-6 mb-6">
+        <div class="text-5xl font-bold mb-2 bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark bg-clip-text text-transparent">
+            <span id="final-score">0</span>/<span id="total-score">50</span>
+        </div>
+        <div class="text-sm text-gray-600 dark:text-gray-400">Your Score</div>
+        
+        <div class="mt-4 grid grid-cols-3 gap-4 text-sm">
+            <div>
+                <div class="font-bold"><span id="correct-answers">0</span></div>
+                <div class="text-gray-600 dark:text-gray-400">Correct</div>
+            </div>
+            <div>
+                <div class="font-bold"><span id="wrong-answers">0</span></div>
+                <div class="text-gray-600 dark:text-gray-400">Wrong</div>
+            </div>
+            <div>
+                <div class="font-bold"><span id="skipped-questions">0</span></div>
+                <div class="text-gray-600 dark:text-gray-400">Skipped</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mb-6">
+        <div class="text-sm font-medium mb-2">Time Taken</div>
+        <div class="text-xl font-bold" id="time-taken">0:00</div>
+    </div>
+    
+    <button id="restart-btn" class="w-full bg-primary-light dark:bg-primary-dark text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity">
+        Take Another Quiz
+    </button>
+</div>
+
+<script>
+   const questions = [
+      // HTML Questions (30)
+      { question: "What is the correct HTML5 document type declaration?", options: ["<!DOCTYPE HTML PUBLIC>", "<!DOCTYPE html>", "<!HTML5>", "<html5>"], answer: 1, category: "HTML" },
+      { question: "Which HTML tag is used to define an unordered list?", options: ["<ol>", "<ul>", "<li>", "<list>"], answer: 1, category: "HTML" },
+      { question: "What does the <br> tag do?", options: ["Creates a bold line", "Inserts a horizontal rule", "Adds a line break", "Defines a paragraph"], answer: 2, category: "HTML" },
+      { question: "Which attribute is required for the <img> tag?", options: ["alt", "src", "href", "link"], answer: 1, category: "HTML" },
+      { question: "What is the correct way to create a hyperlink in HTML?", options: ['<a url="example.com">Link</a>', '<a href="example.com">Link</a>', '<link src="example.com">Link</link>', "<hyperlink>Link</hyperlink>"], answer: 1, category: "HTML" },
+      { question: "Which HTML5 tag is used for embedding audio?", options: ["<sound>", "<music>", "<audio>", "<mp3>"], answer: 2, category: "HTML" },
+      { question: "What does the <canvas> tag do?", options: ["Creates clickable buttons", "Embeds YouTube videos", "Provides a drawing surface for JavaScript", "Displays 3D models"], answer: 2, category: "HTML" },
+      { question: "Which attribute makes an input field mandatory in HTML5?", options: ["required=\"true\"", "mandatory=\"yes\"", "validate=\"required\"", "essential=\"input\""], answer: 0, category: "HTML" },
+      { question: "What is the correct way to comment in HTML?", options: ["// Comment", "<!-- Comment -->", "/* Comment */", "<! Comment>"], answer: 1, category: "HTML" },
+      { question: "Which tag defines a footer for a document or section?", options: ["<bottom>", "<footer>", "<end>", "<foot>"], answer: 1, category: "HTML" },
+      { question: "Which tag is used to define a table row?", options: ["<tr>", "<td>", "<th>", "<table-row>"], answer: 0, category: "HTML" },
+      { question: "What does the <meta> tag typically contain?", options: ["Document metadata", "Page styling", "JavaScript code", "Navigation links"], answer: 0, category: "HTML" },
+      { question: "Which attribute specifies an alternate text for an image?", options: ["title", "alt", "description", "caption"], answer: 1, category: "HTML" },
+      { question: "What is the purpose of the <head> element?", options: ["Contains visible page content", "Contains metadata and links to resources", "Defines the page header", "Creates a navigation menu"], answer: 1, category: "HTML" },
+      { question: "Which tag is used for the largest heading?", options: ["<h6>", "<heading>", "<h1>", "<head>"], answer: 2, category: "HTML" },
+      { question: "What does the <blockquote> tag represent?", options: ["A block of code", "A quotation from another source", "A highlighted text", "A sidebar content"], answer: 1, category: "HTML" },
+      { question: "Which tag is used to embed a video file?", options: ["<media>", "<video>", "<movie>", "<embed>"], answer: 1, category: "HTML" },
+      { question: "What is the purpose of the <nav> element?", options: ["Contains navigation links", "Creates a navbar", "Defines a new section", "Contains site notes"], answer: 0, category: "HTML" },
+      { question: "Which tag is used to create a drop-down list?", options: ["<list>", "<dropdown>", "<select>", "<option>"], answer: 2, category: "HTML" },
+      { question: "What does the <iframe> tag do?", options: ["Creates an inline frame", "Embeds a flash file", "Inserts a form", "Creates a floating image"], answer: 0, category: "HTML" },
+      { question: "Which attribute specifies that an input field must be filled out?", options: ["required", "validate", "mandatory", "placeholder"], answer: 0, category: "HTML" },
+      { question: "What does the <aside> tag represent?", options: ["Content aside from the main content", "A sidebar", "Additional information", "All of the above"], answer: 3, category: "HTML" },
+      { question: "Which tag is used for a multi-line text input?", options: ["<input type='text'>", "<textarea>", "<text>", "<input type='multiline'>"], answer: 1, category: "HTML" },
+      { question: "What is the purpose of the <datalist> element?", options: ["Contains a set of <option> elements", "Provides autocomplete options", "Defines a list of values", "All of the above"], answer: 3, category: "HTML" },
+      { question: "Which attribute specifies that an input field is read-only?", options: ["disabled", "readonly", "static", "fixed"], answer: 1, category: "HTML" },
+      { question: "What does the <figure> tag represent?", options: ["A diagram", "Self-contained content", "An image with caption", "All of the above"], answer: 3, category: "HTML" },
+      { question: "Which tag is used to define a header for a document or section?", options: ["<head>", "<header>", "<heading>", "<hgroup>"], answer: 1, category: "HTML" },
+      { question: "What is the purpose of the <mark> tag?", options: ["Highlight text", "Mark important content", "Indicate relevance", "All of the above"], answer: 3, category: "HTML" },
+      { question: "Which tag is used to define a scalar measurement within a range?", options: ["<range>", "<meter>", "<measure>", "<scale>"], answer: 1, category: "HTML" },
+      { question: "What does the <progress> tag represent?", options: ["Progress of a task", "Completion percentage", "Work in progress", "All of the above"], answer: 3, category: "HTML" },
+
+      // Fill-in-the-gap HTML (10)
+      { type: "fill", question: "The tag used to define the main heading is <input data-answer='<h1>' class='fill-input' />.", answer: "<h1>", category: "HTML" },
+      { type: "fill", question: "To insert a line break, use the <input data-answer='<br>' class='fill-input' /> tag.", answer: "<br>", category: "HTML" },
+      { type: "fill", question: "The attribute for alternative text in images is <input data-answer='alt' class='fill-input' />.", answer: "alt", category: "HTML" },
+      { type: "fill", question: "The tag for creating a hyperlink is <input data-answer='<a>' class='fill-input' />.", answer: "<a>", category: "HTML" },
+      { type: "fill", question: "The tag for embedding JavaScript is <input data-answer='<script>' class='fill-input' />.", answer: "<script>", category: "HTML" },
+      { type: "fill", question: "The tag for including CSS is <input data-answer='<style>' class='fill-input' />.", answer: "<style>", category: "HTML" },
+      { type: "fill", question: "The attribute that makes an input field required is <input data-answer='required' class='fill-input' />.", answer: "required", category: "HTML" },
+      { type: "fill", question: "The tag for a paragraph is <input data-answer='<p>' class='fill-input' />.", answer: "<p>", category: "HTML" },
+      { type: "fill", question: "The tag for a division or section is <input data-answer='<div>' class='fill-input' />.", answer: "<div>", category: "HTML" },
+      { type: "fill", question: "The tag for a horizontal rule is <input data-answer='<hr>' class='fill-input' />.", answer: "<hr>", category: "HTML" },
+
+      // CSS Questions (30)
+      { question: "What does CSS stand for?", options: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style System", "Colorful Style Syntax"], answer: 1, category: "CSS" },
+      { question: "Which CSS property changes the text color?", options: ["font-color", "text-color", "color", "font-style"], answer: 2, category: "CSS" },
+      { question: "How do you apply a style to an element with the ID 'header'?", options: ["#header { }", ".header { }", "header { }", "<header> { }"], answer: 0, category: "CSS" },
+      { question: "Which property is used to add space between an element's border and its content?", options: ["margin", "spacing", "padding", "border-gap"], answer: 2, category: "CSS" },
+      { question: "What does display: none; do?", options: ["Makes an element invisible but takes up space", "Removes an element completely from the layout", "Adds a hidden border", "Changes the font color to white"], answer: 1, category: "CSS" },
+      { question: "Which CSS selector targets all <p> elements inside a <div>?", options: ["div + p", "div.p", "div > p", "div p"], answer: 3, category: "CSS" },
+      { question: "What does z-index control?", options: ["Font size", "Element stacking order", "Background color", "Border thickness"], answer: 1, category: "CSS" },
+      { question: "Which property creates rounded corners?", options: ["border-curve", "corner-radius", "border-radius", "round-edge"], answer: 2, category: "CSS" },
+      { question: "How do you apply a style when hovering over an element?", options: ["element:hover { }", "element.mouseover { }", "onhover=\"style\"", "hover(element)"], answer: 0, category: "CSS" },
+      { question: "What does flexbox solve in CSS?", options: ["Image compression", "Complex layout alignment", "Text encryption", "Browser compatibility"], answer: 1, category: "CSS" },
+      { question: "Which property changes the font family?", options: ["font-family", "font-type", "text-font", "font-face"], answer: 0, category: "CSS" },
+      { question: "What does the 'rem' unit represent?", options: ["Root element's margin", "Relative to parent element's font size", "Root element's font size", "Relative to viewport width"], answer: 2, category: "CSS" },
+      { question: "Which property adds space between letters?", options: ["letter-spacing", "word-spacing", "text-spacing", "font-spacing"], answer: 0, category: "CSS" },
+      { question: "What does the 'vh' unit represent?", options: ["Viewport height", "Vertical height", "Variable height", "Visible height"], answer: 0, category: "CSS" },
+      { question: "Which property creates a shadow effect?", options: ["shadow-effect", "box-shadow", "element-shadow", "drop-shadow"], answer: 1, category: "CSS" },
+      { question: "What is the default value of the position property?", options: ["static", "relative", "absolute", "fixed"], answer: 0, category: "CSS" },
+      { question: "Which property controls text alignment?", options: ["text-align", "align-text", "font-align", "text-position"], answer: 0, category: "CSS" },
+      { question: "What does the 'transition' property do?", options: ["Changes element position", "Animates property changes", "Moves elements between pages", "Transforms element shape"], answer: 1, category: "CSS" },
+      { question: "Which selector matches all elements?", options: ["*", "#all", ".all", "all"], answer: 0, category: "CSS" },
+      { question: "What does the 'overflow' property control?", options: ["Content that exceeds container", "Page scrolling", "Element transparency", "Background images"], answer: 0, category: "CSS" },
+      { question: "Which property changes the cursor type?", options: ["mouse-pointer", "cursor", "pointer-type", "mouse-cursor"], answer: 1, category: "CSS" },
+      { question: "What does 'opacity' control?", options: ["Element transparency", "Color intensity", "Shadow darkness", "Border thickness"], answer: 0, category: "CSS" },
+      { question: "Which property creates a gradient background?", options: ["background-gradient", "gradient", "linear-gradient", "All of the above"], answer: 3, category: "CSS" },
+      { question: "What does '!important' do in CSS?", options: ["Makes a rule more important", "Overrides other declarations", "Prioritizes the rule", "All of the above"], answer: 3, category: "CSS" },
+      { question: "Which property controls text decoration?", options: ["text-decoration", "font-decoration", "text-style", "font-style"], answer: 0, category: "CSS" },
+      { question: "What does 'float' do in CSS?", options: ["Moves an element to one side", "Makes text wrap around it", "Both A and B", "Creates a floating effect"], answer: 2, category: "CSS" },
+      { question: "Which property controls element visibility?", options: ["display", "visibility", "opacity", "All of the above"], answer: 3, category: "CSS" },
+      { question: "What does 'transform' do in CSS?", options: ["Changes element shape", "Moves or rotates elements", "Applies 3D effects", "All of the above"], answer: 3, category: "CSS" },
+      { question: "Which property creates animations?", options: ["animation", "transition", "keyframes", "All of the above"], answer: 3, category: "CSS" },
+      { question: "What does 'will-change' do?", options: ["Optimizes animations", "Hints browser about changes", "Improves performance", "All of the above"], answer: 3, category: "CSS" },
+
+      // Fill-in-the-gap CSS (10)
+      { type: "fill", question: "The property to set the background color is <input data-answer='background-color' class='fill-input' />.", answer: "background-color", category: "CSS" },
+      { type: "fill", question: "To select all elements in CSS, use the <input data-answer='*' class='fill-input' /> selector.", answer: "*", category: "CSS" },
+      { type: "fill", question: "The property for text alignment is <input data-answer='text-align' class='fill-input' />.", answer: "text-align", category: "CSS" },
+      { type: "fill", question: "The property for element width is <input data-answer='width' class='fill-input' />.", answer: "width", category: "CSS" },
+      { type: "fill", question: "The property for element height is <input data-answer='height' class='fill-input' />.", answer: "height", category: "CSS" },
+      { type: "fill", question: "The property for font size is <input data-answer='font-size' class='fill-input' />.", answer: "font-size", category: "CSS" },
+      { type: "fill", question: "The property for margin is <input data-answer='margin' class='fill-input' />.", answer: "margin", category: "CSS" },
+      { type: "fill", question: "The property for padding is <input data-answer='padding' class='fill-input' />.", answer: "padding", category: "CSS" },
+      { type: "fill", question: "The property for border is <input data-answer='border' class='fill-input' />.", answer: "border", category: "CSS" },
+      { type: "fill", question: "The property for display is <input data-answer='display' class='fill-input' />.", answer: "display", category: "CSS" },
+
+      // JavaScript Questions (30)
+      { question: "Which keyword is used to declare a variable in JavaScript?", options: ["var", "variable", "let", "const"], answer: 0, category: "JavaScript" },
+      { question: "What is the output of 5 + '5' in JavaScript?", options: ["10", "55", "Error", "5"], answer: 1, category: "JavaScript" },
+      { question: "How do you write an if statement in JavaScript?", options: ["if (x == 5) { }", "if x = 5 then { }", "if {x == 5}", "if [x === 5]"], answer: 0, category: "JavaScript" },
+      { question: "What does document.getElementById() do?", options: ["Changes the page background", "Selects an HTML element by its ID", "Creates a new element", "Refreshes the page"], answer: 1, category: "JavaScript" },
+      { question: "Which method adds a new item to the end of an array?", options: ["array.push()", "array.pop()", "array.add()", "array.append()"], answer: 0, category: "JavaScript" },
+      { question: "What is the output of typeof null?", options: ["\"null\"", "\"object\"", "\"undefined\"", "\"NaN\""], answer: 1, category: "JavaScript" },
+      { question: "Which method converts JSON to a JavaScript object?", options: ["JSON.decode()", "JSON.parse()", "JSON.toObject()", "JSON.import()"], answer: 1, category: "JavaScript" },
+      { question: "What does event.preventDefault() do?", options: ["Stops event bubbling", "Cancels default browser behavior", "Refreshes the page", "Triggers another event"], answer: 1, category: "JavaScript" },
+      { question: "How do you check if a variable is an array?", options: ["typeof arr === \"array\"", "arr.isArray()", "Array.isArray(arr)", "arr.type() === \"array\""], answer: 2, category: "JavaScript" },
+      { question: "What is a closure in JavaScript?", options: ["A CSS animation", "A function with access to its outer scope", "A DOM element", "A type of loop"], answer: 1, category: "JavaScript" },
+      { question: "What does the 'this' keyword refer to?", options: ["The current function", "The parent object", "Depends on execution context", "The global object"], answer: 2, category: "JavaScript" },
+      { question: "Which operator checks both value and type equality?", options: ["==", "===", "=", "!=="], answer: 1, category: "JavaScript" },
+      { question: "What is hoisting in JavaScript?", options: ["Moving variables to top of scope", "Lifting elements in DOM", "A type of animation", "A security feature"], answer: 0, category: "JavaScript" },
+      { question: "Which method creates a new array with filtered elements?", options: ["filter()", "map()", "reduce()", "forEach()"], answer: 0, category: "JavaScript" },
+      { question: "What is an arrow function?", options: ["A function with arrow syntax", "A DOM selector", "A CSS property", "An HTML element"], answer: 0, category: "JavaScript" },
+      { question: "Which method executes a function after a delay?", options: ["setTimeout()", "delay()", "wait()", "pause()"], answer: 0, category: "JavaScript" },
+      { question: "What does the 'use strict' directive do?", options: ["Enables strict mode", "Disables features", "Forces type checking", "Enables ES6 features"], answer: 0, category: "JavaScript" },
+      { question: "Which object represents the browser window?", options: ["document", "window", "browser", "navigator"], answer: 1, category: "JavaScript" },
+      { question: "What is the purpose of the 'async' keyword?", options: ["Defines asynchronous functions", "Creates animations", "Loads scripts", "Handles events"], answer: 0, category: "JavaScript" },
+      { question: "Which method converts an object to a JSON string?", options: ["JSON.encode()", "JSON.stringify()", "JSON.toJSON()", "JSON.serialize()"], answer: 1, category: "JavaScript" },
+      { question: "What does 'NaN' stand for?", options: ["Not a Node", "Not a Number", "No applicable Number", "Null and None"], answer: 1, category: "JavaScript" },
+      { question: "Which method joins array elements into a string?", options: ["join()", "concat()", "merge()", "combine()"], answer: 0, category: "JavaScript" },
+      { question: "What does the 'new' keyword do?", options: ["Creates a new variable", "Creates a new object instance", "Declares a new function", "All of the above"], answer: 1, category: "JavaScript" },
+      { question: "Which method removes the last element from an array?", options: ["array.removeLast()", "array.pop()", "array.delete()", "array.slice(-1)"], answer: 1, category: "JavaScript" },
+      { question: "What is a promise in JavaScript?", options: ["A commitment to complete code", "An object representing eventual completion", "A type of variable", "A function declaration"], answer: 1, category: "JavaScript" },
+      { question: "Which method reverses an array?", options: ["array.flip()", "array.reverse()", "array.invert()", "array.backwards()"], answer: 1, category: "JavaScript" },
+      { question: "What does 'DOM' stand for?", options: ["Document Object Model", "Data Object Model", "Display Object Management", "Document Order Model"], answer: 0, category: "JavaScript" },
+      { question: "Which method finds an element in an array?", options: ["array.search()", "array.find()", "array.locate()", "array.get()"], answer: 1, category: "JavaScript" },
+      { question: "What is 'event bubbling'?", options: ["Events propagating up the DOM", "Multiple events firing", "Events canceling each other", "None of the above"], answer: 0, category: "JavaScript" },
+      { question: "Which method creates a new array from another array?", options: ["array.clone()", "array.copy()", "array.slice()", "All of the above"], answer: 3, category: "JavaScript" },
+
+      // Fill-in-the-gap JavaScript (10)
+      { type: "fill", question: "To declare a variable, use the <input data-answer='var' class='fill-input' /> keyword.", answer: "var", category: "JavaScript" },
+      { type: "fill", question: "The method to parse a JSON string is <input data-answer='JSON.parse' class='fill-input' />.", answer: "JSON.parse", category: "JavaScript" },
+      { type: "fill", question: "The method to convert an object to JSON is <input data-answer='JSON.stringify' class='fill-input' />.", answer: "JSON.stringify", category: "JavaScript" },
+      { type: "fill", question: "The operator for strict equality is <input data-answer='===' class='fill-input' />.", answer: "===", category: "JavaScript" },
+      { type: "fill", question: "The keyword to declare a constant is <input data-answer='const' class='fill-input' />.", answer: "const", category: "JavaScript" },
+      { type: "fill", question: "The method to add an event listener is <input data-answer='addEventListener' class='fill-input' />.", answer: "addEventListener", category: "JavaScript" },
+      { type: "fill", question: "The global object in browsers is <input data-answer='window' class='fill-input' />.", answer: "window", category: "JavaScript" },
+      { type: "fill", question: "The method to select an element by ID is <input data-answer='getElementById' class='fill-input' />.", answer: "getElementById", category: "JavaScript" },
+      { type: "fill", question: "The method to execute code after a delay is <input data-answer='setTimeout' class='fill-input' />.", answer: "setTimeout", category: "JavaScript" },
+      { type: "fill", question: "The property to get an element's text content is <input data-answer='textContent' class='fill-input' />.", answer: "textContent", category: "JavaScript" },
+
+      // Web History Questions (20)
+      { question: "Who invented the World Wide Web?", options: ["Bill Gates", "Tim Berners-Lee", "Steve Jobs", "Mark Zuckerberg"], answer: 1, category: "Web History" },
+      { question: "What was the first web browser called?", options: ["Internet Explorer", "Mosaic", "Netscape", "WorldWideWeb"], answer: 3, category: "Web History" },
+      { question: "What does HTTP stand for?", options: ["HyperText Transfer Protocol", "High-Tech Text Processing", "Hyperlink Text Transmission", "Hosted Text Transfer Program"], answer: 0, category: "Web History" },
+      { question: "What was the original purpose of ARPANET?", options: ["Military communication", "Online shopping", "Social networking", "Gaming"], answer: 0, category: "Web History" },
+      { question: "What is the difference between the Internet and the WWW?", options: ["They are the same", "The Internet is hardware; WWW is software", "WWW is older than the Internet", "Only WWW uses TCP/IP"], answer: 1, category: "Web History" },
+      { question: "What year was the World Wide Web invented?", options: ["1985", "1989", "1995", "2001"], answer: 1, category: "Web History" },
+      { question: "Which protocol secures HTTP traffic?", options: ["FTP", "SMTP", "HTTPS", "TCP"], answer: 2, category: "Web History" },
+      { question: "What was the first commercial web browser?", options: ["Mosaic", "Netscape Navigator", "Internet Explorer", "Firefox"], answer: 1, category: "Web History" },
+      { question: "What does URL stand for?", options: ["Universal Resource Locator", "Uniform Resource Locator", "Unified Resource Link", "Unique Reference Location"], answer: 1, category: "Web History" },
+      { question: "Which organization manages domain names?", options: ["IEEE", "ICANN", "W3C", "ISO"], answer: 1, category: "Web History" },
+      { question: "When was JavaScript first released?", options: ["1990", "1995", "2000", "2005"], answer: 1, category: "Web History" },
+      { question: "What was the first version of HTML?", options: ["HTML 1.0", "HTML 2.0", "HTML 3.2", "HTML 4.0"], answer: 0, category: "Web History" },
+      { question: "Which company developed the first CSS specification?", options: ["Microsoft", "Netscape", "W3C", "Apple"], answer: 2, category: "Web History" },
+      { question: "What was the first website about?", options: ["The World Wide Web project", "CERN research", "HTML documentation", "Computer networking"], answer: 0, category: "Web History" },
+      { question: "When was the first iPhone released?", options: ["2005", "2007", "2009", "2011"], answer: 1, category: "Web History" },
+      { question: "What was the first social media platform?", options: ["Facebook", "MySpace", "Six Degrees", "Friendster"], answer: 2, category: "Web History" },
+      { question: "When was Google founded?", options: ["1995", "1998", "2001", "2004"], answer: 1, category: "Web History" },
+      { question: "What was the first video uploaded to YouTube?", options: ["Charlie bit my finger", "Me at the zoo", "Evolution of dance", "Lazy Sunday"], answer: 1, category: "Web History" },
+      { question: "When was the first tweet sent?", options: ["2004", "2006", "2008", "2010"], answer: 1, category: "Web History" },
+      { question: "What was the first domain name ever registered?", options: ["symbolics.com", "apple.com", "ibm.com", "mit.edu"], answer: 0, category: "Web History" },
+
+      // Fill-in-the-gap Web History (10)
+      { type: "fill", question: "The World Wide Web was invented by <input data-answer='Tim Berners-Lee' class='fill-input' />.", answer: "Tim Berners-Lee", category: "Web History" },
+      { type: "fill", question: "The first web browser was called <input data-answer='WorldWideWeb' class='fill-input' />.", answer: "WorldWideWeb", category: "Web History" },
+      { type: "fill", question: "The secure version of HTTP is <input data-answer='HTTPS' class='fill-input' />.", answer: "HTTPS", category: "Web History" },
+      { type: "fill", question: "The organization that manages domain names is <input data-answer='ICANN' class='fill-input' />.", answer: "ICANN", category: "Web History" },
+      { type: "fill", question: "The first version of HTML was <input data-answer='HTML 1.0' class='fill-input' />.", answer: "HTML 1.0", category: "Web History" },
+      { type: "fill", question: "The first commercial web browser was <input data-answer='Netscape Navigator' class='fill-input' />.", answer: "Netscape Navigator", category: "Web History" },
+      { type: "fill", question: "The first social media platform was <input data-answer='Six Degrees' class='fill-input' />.", answer: "Six Degrees", category: "Web History" },
+      { type: "fill", question: "The first domain name registered was <input data-answer='symbolics.com' class='fill-input' />.", answer: "symbolics.com", category: "Web History" },
+      { type: "fill", question: "The year the WWW was invented was <input data-answer='1989' class='fill-input' />.", answer: "1989", category: "Web History" },
+      { type: "fill", question: "The first website was about <input data-answer='the World Wide Web project' class='fill-input' />.", answer: "the World Wide Web project", category: "Web History" },
+
+      // Networking Questions (20)
+      { question: "What is the function of a router?", options: ["Connects devices in a LAN", "Routes data between networks", "Stores website files", "Encrypts data"], answer: 1, category: "Networking" },
+      { question: "What is the main advantage of IPv6 over IPv4?", options: ["Faster speed", "More IP addresses", "Better security", "Lower cost"], answer: 1, category: "Networking" },
+      { question: "What does DNS do?", options: ["Encrypts data", "Converts domain names to IP addresses", "Blocks malware", "Stores website files"], answer: 1, category: "Networking" },
+      { question: "What is cloud computing?", options: ["Storing data on physical servers", "On-demand IT resources over the Internet", "A type of cybersecurity", "A programming language"], answer: 1, category: "Networking" },
+      { question: "Which is NOT a cloud service model?", options: ["SaaS", "PaaS", "IaaS", "HaaS"], answer: 3, category: "Networking" },
+      { question: "What does CDN stand for?", options: ["Content Delivery Network", "Code Development Node", "Central Data Nexus", "Cached Domain Name"], answer: 0, category: "Networking" },
+      { question: "Which HTTP status code means \"Not Found\"?", options: ["200", "301", "404", "500"], answer: 2, category: "Networking" },
+      { question: "What does TCP/IP stand for?", options: ["Transmission Control Protocol/Internet Protocol", "Telecommunication Protocol/Internet Protocol", "Transfer Control Process/Internet Process", "Technical Communication Protocol/Internet Protocol"], answer: 0, category: "Networking" },
+      { question: "What is the purpose of a firewall?", options: ["Monitor network traffic", "Block unauthorized access", "Speed up internet connection", "Store website backups"], answer: 1, category: "Networking" },
+      { question: "What does VPN stand for?", options: ["Virtual Private Network", "Verified Public Network", "Virtual Public Node", "Verified Private Node"], answer: 0, category: "Networking" },
+      { question: "What does LAN stand for?", options: ["Local Area Network", "Large Access Network", "Linked Area Nodes", "Local Access Nodes"], answer: 0, category: "Networking" },
+      { question: "What is the purpose of DHCP?", options: ["Assign IP addresses automatically", "Encrypt network traffic", "Block malicious websites", "Monitor network speed"], answer: 0, category: "Networking" },
+      { question: "What does SSL stand for?", options: ["Secure Socket Layer", "System Security Layer", "Server Side Language", "Secure System Link"], answer: 0, category: "Networking" },
+      { question: "Which port does HTTP typically use?", options: ["80", "443", "21", "25"], answer: 0, category: "Networking" },
+      { question: "What is the purpose of NAT?", options: ["Translate private IPs to public IPs", "Encrypt network traffic", "Filter malicious content", "Monitor network usage"], answer: 0, category: "Networking" },
+      { question: "What does MAC address stand for?", options: ["Media Access Control", "Machine Access Code", "Main Address Control", "Media Address Code"], answer: 0, category: "Networking" },
+      { question: "What is the purpose of ARP?", options: ["Resolve IP addresses to MAC addresses", "Route packets between networks", "Encrypt network traffic", "Authenticate users"], answer: 0, category: "Networking" },
+      { question: "What does QoS stand for?", options: ["Quality of Service", "Quantity of Speed", "Query of System", "Quick Online Service"], answer: 0, category: "Networking" },
+      { question: "What is the purpose of ICMP?", options: ["Send error messages", "Encrypt data", "Route traffic", "Monitor networks"], answer: 0, category: "Networking" },
+      { question: "What does FTP stand for?", options: ["File Transfer Protocol", "Fast Transmission Process", "File Transmission Protocol", "Fast Transfer Process"], answer: 0, category: "Networking" },
+
+      // Fill-in-the-gap Networking (10)
+      { type: "fill", question: "The protocol for secure web traffic is <input data-answer='HTTPS' class='fill-input' />.", answer: "HTTPS", category: "Networking" },
+      { type: "fill", question: "The system that translates domain names to IPs is <input data-answer='DNS' class='fill-input' />.", answer: "DNS", category: "Networking" },
+      { type: "fill", question: "The standard port for HTTP is <input data-answer='80' class='fill-input' />.", answer: "80", category: "Networking" },
+      { type: "fill", question: "The protocol for sending email is <input data-answer='SMTP' class='fill-input' />.", answer: "SMTP", category: "Networking" },
+      { type: "fill", question: "The private network technology is <input data-answer='VPN' class='fill-input' />.", answer: "VPN", category: "Networking" },
+      { type: "fill", question: "The protocol for file transfer is <input data-answer='FTP' class='fill-input' />.", answer: "FTP", category: "Networking" },
+      { type: "fill", question: "The latest IP version is <input data-answer='IPv6' class='fill-input' />.", answer: "IPv6", category: "Networking" },
+      { type: "fill", question: "The network security system is <input data-answer='firewall' class='fill-input' />.", answer: "firewall", category: "Networking" },
+      { type: "fill", question: "The protocol for secure sockets is <input data-answer='SSL' class='fill-input' />.", answer: "SSL", category: "Networking" },
+      { type: "fill", question: "The protocol for dynamic IP assignment is <input data-answer='DHCP' class='fill-input' />.", answer: "DHCP", category: "Networking" },
+
+      // Web Concepts (20)
+      { question: "What is the first step in web development?", options: ["Coding", "Testing", "Planning", "Hosting"], answer: 2, category: "Web Concepts" },
+      { question: "What is responsive web design?", options: ["Websites that adjust to different screen sizes", "Websites with animations", "Websites that require login", "Websites with no images"], answer: 0, category: "Web Concepts" },
+      { question: "What does SEO stand for?", options: ["Search Engine Optimization", "Secure Electronic Operation", "System Error Override", "Structured Event Order"], answer: 0, category: "Web Concepts" },
+      { question: "Which of these is a front-end framework?", options: ["Django", "React", "Node.js", "Flask"], answer: 1, category: "Web Concepts" },
+      { question: "What is the purpose of a CMS?", options: ["Manage website content easily", "Improve cybersecurity", "Increase server speed", "Block spam emails"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of localStorage?", options: ["Store data on the server", "Cache images", "Persist data in the browser", "Encrypt passwords"], answer: 2, category: "Web Concepts" },
+      { question: "Which is NOT a JavaScript framework?", options: ["React", "Angular", "Django", "Vue"], answer: 2, category: "Web Concepts" },
+      { question: "What is the main advantage of SSR (Server-Side Rendering)?", options: ["Faster initial page load", "Better animations", "Lower server cost", "Easier debugging"], answer: 0, category: "Web Concepts" },
+      { question: "What is a Single Page Application (SPA)?", options: ["App with one HTML page", "App with minimal CSS", "App with no JavaScript", "App with one image"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of a favicon?", options: ["Website icon in browser tab", "Favorite content marker", "Feedback form", "Visual effect"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of a CDN?", options: ["Deliver content faster", "Store user data", "Process payments", "Manage databases"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of CORS?", options: ["Control cross-origin requests", "Encrypt data", "Cache resources", "Optimize images"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of WebSockets?", options: ["Real-time communication", "File transfer", "Data storage", "Image processing"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of GraphQL?", options: ["Efficient data querying", "Image processing", "CSS styling", "DOM manipulation"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of JWT?", options: ["Authentication", "Data storage", "CSS preprocessing", "DOM manipulation"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of Webpack?", options: ["Module bundling", "Database management", "Image editing", "CSS generation"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of Babel?", options: ["JavaScript transpiling", "CSS preprocessing", "Image compression", "Database optimization"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of TypeScript?", options: ["Add static typing to JavaScript", "Replace HTML", "Style websites", "Manage databases"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of Docker?", options: ["Containerization", "CSS generation", "DOM manipulation", "Image editing"], answer: 0, category: "Web Concepts" },
+      { question: "What is the purpose of CI/CD?", options: ["Automate software delivery", "Style websites", "Manage databases", "Process images"], answer: 0, category: "Web Concepts" },
+
+      // Fill-in-the-gap Web Concepts (10)
+      { type: "fill", question: "A website icon shown in the browser tab is called a <input data-answer='favicon' class='fill-input' />.", answer: "favicon", category: "Web Concepts" },
+      { type: "fill", question: "The practice of making websites work on all devices is <input data-answer='responsive design' class='fill-input' />.", answer: "responsive design", category: "Web Concepts" },
+      { type: "fill", question: "The process of improving website visibility is <input data-answer='SEO' class='fill-input' />.", answer: "SEO", category: "Web Concepts" },
+      { type: "fill", question: "The React feature for reusable UI is <input data-answer='components' class='fill-input' />.", answer: "components", category: "Web Concepts" },
+      { type: "fill", question: "The storage API for browsers is <input data-answer='localStorage' class='fill-input' />.", answer: "localStorage", category: "Web Concepts" },
+      { type: "fill", question: "The tool for bundling modules is <input data-answer='Webpack' class='fill-input' />.", answer: "Webpack", category: "Web Concepts" },
+      { type: "fill", question: "The typed superset of JavaScript is <input data-answer='TypeScript' class='fill-input' />.", answer: "TypeScript", category: "Web Concepts" },
+      { type: "fill", question: "The authentication token format is <input data-answer='JWT' class='fill-input' />.", answer: "JWT", category: "Web Concepts" },
+      { type: "fill", question: "The query language for APIs is <input data-answer='GraphQL' class='fill-input' />.", answer: "GraphQL", category: "Web Concepts" },
+      { type: "fill", question: "The containerization platform is <input data-answer='Docker' class='fill-input' />.", answer: "Docker", category: "Web Concepts" },
+
+      // Bootstrap Questions (20)
+      { question: "What is Bootstrap?", options: ["A JavaScript library", "A CSS framework", "A database", "A web server"], answer: 1, category: "Bootstrap" },
+      { question: "Which class makes a button look primary in Bootstrap?", options: ["btn-main", "btn-primary", "button-primary", "btn-main-primary"], answer: 1, category: "Bootstrap" },
+      { question: "Which Bootstrap class creates a responsive container?", options: ["container-fluid", "container-responsive", "container", "container-adaptive"], answer: 2, category: "Bootstrap" },
+      { question: "How do you include Bootstrap in a project?", options: ["Add a CDN link", "Install via npm", "Download files", "All of the above"], answer: 3, category: "Bootstrap" },
+      { question: "Which class is used for a row in Bootstrap's grid system?", options: ["row", "grid-row", "bs-row", "container-row"], answer: 0, category: "Bootstrap" },
+      { question: "What is the default number of columns in Bootstrap's grid?", options: ["10", "12", "16", "24"], answer: 1, category: "Bootstrap" },
+      { question: "Which class makes an image responsive in Bootstrap?", options: ["img-responsive", "img-fluid", "responsive-img", "fluid-img"], answer: 1, category: "Bootstrap" },
+      { question: "Which class adds a margin to the top in Bootstrap?", options: ["mt-3", "margin-top-3", "top-m-3", "m-t-3"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a navigation bar in Bootstrap?", options: ["navbar", "nav-bar", "bs-navbar", "navigation-bar"], answer: 0, category: "Bootstrap" },
+      { question: "Which class creates a card component in Bootstrap?", options: ["card", "bs-card", "card-component", "bootstrap-card"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a modal dialog in Bootstrap?", options: ["modal", "dialog", "popup", "bs-modal"], answer: 0, category: "Bootstrap" },
+      { question: "Which class makes text centered in Bootstrap?", options: ["text-center", "center-text", "align-center", "centered"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a dropdown menu in Bootstrap?", options: ["dropdown", "dropdown-menu", "menu-dropdown", "bs-dropdown"], answer: 1, category: "Bootstrap" },
+      { question: "Which class adds padding to all sides in Bootstrap?", options: ["p-3", "padding-3", "pd-3", "all-padding-3"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a Bootstrap alert?", options: ["alert", "bs-alert", "alert-box", "alert-message"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a Bootstrap badge?", options: ["badge", "bs-badge", "badge-label", "label-badge"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a Bootstrap progress bar?", options: ["progress-bar", "bar-progress", "bs-progress", "progress"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a Bootstrap spinner?", options: ["spinner-border", "bs-spinner", "spinner", "border-spinner"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a Bootstrap tooltip?", options: ["tooltip", "bs-tooltip", "tooltip-bootstrap", "tip"], answer: 0, category: "Bootstrap" },
+      { question: "Which class is used for a Bootstrap table?", options: ["table", "bs-table", "table-bootstrap", "table-class"], answer: 0, category: "Bootstrap" },
+
+      // Fill-in-the-gap Bootstrap (5)
+      { type: "fill", question: "The class for a primary button is <input data-answer='btn-primary' class='fill-input' />.", answer: "btn-primary", category: "Bootstrap" },
+      { type: "fill", question: "The class for a responsive image is <input data-answer='img-fluid' class='fill-input' />.", answer: "img-fluid", category: "Bootstrap" },
+      { type: "fill", question: "The class for a grid row is <input data-answer='row' class='fill-input' />.", answer: "row", category: "Bootstrap" },
+      { type: "fill", question: "The class for a navigation bar is <input data-answer='navbar' class='fill-input' />.", answer: "navbar", category: "Bootstrap" },
+      { type: "fill", question: "The class for a Bootstrap alert is <input data-answer='alert' class='fill-input' />.", answer: "alert", category: "Bootstrap" },
+    ];
+
+  let selectedQuestions = [];
+let currentQuestionIndex = 0;
+let score = 0;
+let timerInterval;
+let timeLeft;
+let startTime;
+let answeredQuestions = 0;
+let selectedCategories = [];
+let skippedQuestionIndices = []; // ✅ Holds indices of skipped questions
+
+const startScreen = document.getElementById('start-screen');
+const quizScreen = document.getElementById('quiz-screen');
+const resultScreen = document.getElementById('result-screen');
+const questionCountInput = document.getElementById('question-count');
+const countDisplay = document.getElementById('count-display');
+const startBtn = document.getElementById('start-btn');
+const nextBtn = document.getElementById('next-btn');
+const skipBtn = document.getElementById('skip-btn');
+const restartBtn = document.getElementById('restart-btn');
+const questionElement = document.getElementById('question');
+const optionsElement = document.getElementById('options');
+const currentQuestionElement = document.getElementById('current-question');
+const totalQuestionsElement = document.getElementById('total-questions');
+const timerElement = document.getElementById('timer');
+const scoreElement = document.getElementById('score');
+const finalScoreElement = document.getElementById('final-score');
+const totalScoreElement = document.getElementById('total-score');
+const progressBar = document.getElementById('progress-bar');
+const questionCategory = document.getElementById('question-category');
+const categoriesCompleted = document.getElementById('categories-completed');
+const correctAnswersElement = document.getElementById('correct-answers');
+const wrongAnswersElement = document.getElementById('wrong-answers');
+const skippedQuestionsElement = document.getElementById('skipped-questions');
+const timeTakenElement = document.getElementById('time-taken');
+const themeToggle = document.getElementById('theme-toggle');
+const themeIcon = document.getElementById('theme-icon');
+
+// Theme toggle
+themeToggle.addEventListener('click', () => {
+  document.documentElement.classList.toggle('dark');
+  const isDark = document.documentElement.classList.contains('dark');
+  themeIcon.innerHTML = isDark 
+    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />'
+    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />';
+});
+
+questionCountInput.addEventListener('input', () => {
+  countDisplay.textContent = questionCountInput.value;
+});
+
+function getSelectedCategories() {
+  const checkboxes = document.querySelectorAll('.category-checkbox:checked');
+  selectedCategories = Array.from(checkboxes).map(cb => cb.value);
+  return selectedCategories;
+}
+
+startBtn.addEventListener('click', startQuiz);
+nextBtn.addEventListener('click', showNextQuestion);
+skipBtn.addEventListener('click', skipQuestion);
+restartBtn.addEventListener('click', () => {
+  startScreen.classList.remove('hidden');
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  questionCountInput.value = 50;
+  countDisplay.textContent = '50';
+});
+
+function startQuiz() {
+  const numQuestions = parseInt(questionCountInput.value);
+  if (numQuestions < 50 || numQuestions > 100 || isNaN(numQuestions)) {
+    alert('Please enter a number between 50 and 100.');
+    return;
+  }
+
+  getSelectedCategories();
+  if (selectedCategories.length === 0) {
+    alert('Please select at least one category.');
+    return;
+  }
+
+  startScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  selectedQuestions = getRandomQuestions(numQuestions);
+  currentQuestionIndex = 0;
+  score = 0;
+  answeredQuestions = 0;
+  skippedQuestionIndices = []; // ✅ Reset skipped
+  startTime = new Date();
+  timeLeft = calculateTime(numQuestions);
+  updateTimerDisplay();
+  timerInterval = setInterval(updateTimer, 1000);
+  showQuestion();
+}
+
+function getRandomQuestions(num) {
+  const filteredQuestions = questions.filter(q => selectedCategories.includes(q.category));
+  const shuffled = [...filteredQuestions].sort(() => 0.5 - Math.random());
+  if (shuffled.length < num) {
+    const allShuffled = [...questions].sort(() => 0.5 - Math.random());
+    return allShuffled.slice(0, num);
+  }
+  return shuffled.slice(0, num);
+}
+
+function calculateTime(numQuestions) {
+  return numQuestions * 30;
+}
+
+function updateTimerDisplay() {
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  if (timeLeft <= 60) {
+    timerElement.classList.add('text-red-500', 'animate-pulse');
+  } else {
+    timerElement.classList.remove('text-red-500', 'animate-pulse');
+  }
+}
+
+function updateTimer() {
+  timeLeft--;
+  if (timeLeft <= 0) {
+    clearInterval(timerInterval);
+    endQuiz();
+  } else {
+    updateTimerDisplay();
+  }
+}
+
+function showQuestion() {
+  const question = selectedQuestions[currentQuestionIndex];
+  questionElement.innerHTML = '';
+  optionsElement.innerHTML = '';
+  questionCategory.textContent = question.category;
+
+  if (question.type === "fill") {
+    questionElement.innerHTML = question.question;
+    const input = questionElement.querySelector('.fill-input');
+    if (input) input.className = 'fill-input p-2 border rounded bg-white/50 dark:bg-gray-700/50';
+
+    const submitBtn = document.createElement('button');
+    submitBtn.textContent = "Submit";
+    submitBtn.className = 'w-full bg-primary-light dark:bg-primary-dark text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity mt-4';
+    submitBtn.addEventListener('click', () => {
+      const input = questionElement.querySelector('.fill-input');
+      if (!input) return;
+
+      const userAnswer = input.value.trim();
+      const correctAnswer = question.answer;
+      const normalizeAnswer = (ans) => {
+        if (correctAnswer.startsWith('<') && correctAnswer.endsWith('>')) {
+          return ans.replace(/[<>]/g, '').trim().toLowerCase();
+        }
+        return ans.toLowerCase();
+      };
+
+      const isCorrect = normalizeAnswer(userAnswer) === normalizeAnswer(correctAnswer);
+      input.disabled = true;
+      submitBtn.disabled = true;
+
+      if (isCorrect) {
+        input.classList.add('bg-secondary-light', 'dark:bg-secondary-dark', 'text-white');
+        score++;
+        scoreElement.textContent = score;
+      } else {
+        input.classList.add('bg-red-500', 'text-white');
+        const correctSpan = document.createElement('span');
+        correctSpan.textContent = ` (Correct: ${correctAnswer})`;
+        correctSpan.className = 'ml-2 text-sm';
+        input.parentNode.insertBefore(correctSpan, input.nextSibling);
+      }
+
+      answeredQuestions++;
+      nextBtn.classList.remove('hidden');
+    });
+
+    optionsElement.appendChild(submitBtn);
+  } else {
+    questionElement.textContent = question.question;
+    question.options.forEach((option, index) => {
+      const button = document.createElement('button');
+      button.className = 'w-full p-3 text-left border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors option-btn';
+      button.textContent = option;
+      button.addEventListener('click', () => selectOption(index, question.answer));
+      optionsElement.appendChild(button);
+    });
+  }
+
+  currentQuestionElement.textContent = currentQuestionIndex + 1;
+  totalQuestionsElement.textContent = selectedQuestions.length;
+  scoreElement.textContent = score;
+  const progress = ((answeredQuestions + skippedQuestionIndices.length) / selectedQuestions.length) * 100;
+  progressBar.style.width = `${progress}%`;
+  nextBtn.classList.add('hidden');
+}
+
+function selectOption(selectedIndex, correctIndex) {
+  const options = document.querySelectorAll('.option-btn');
+  options.forEach(btn => {
+    btn.disabled = true;
+    btn.classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700');
+  });
+
+  options[correctIndex].classList.add('bg-secondary-light', 'dark:bg-secondary-dark', 'text-white');
+
+  if (selectedIndex !== correctIndex) {
+    options[selectedIndex].classList.add('bg-red-500', 'text-white');
+  } else {
+    score++;
+    scoreElement.textContent = score;
+  }
+
+  answeredQuestions++;
+  nextBtn.classList.remove('hidden');
+}
+
+function skipQuestion() {
+  if (!skippedQuestionIndices.includes(currentQuestionIndex)) {
+    skippedQuestionIndices.push(currentQuestionIndex); // ✅ Track skipped index
+  }
+  showNextQuestion();
+}
+
+function showNextQuestion() {
+  currentQuestionIndex++;
+
+  if (currentQuestionIndex < selectedQuestions.length) {
+    showQuestion();
+  } else if (skippedQuestionIndices.length > 0) {
+    alert("You've finished all new questions. Revisiting skipped...");
+    currentQuestionIndex = skippedQuestionIndices.shift(); // ✅ Revisit
+    showQuestion();
+  } else {
+    clearInterval(timerInterval);
+    endQuiz();
+  }
+}
+
+function endQuiz() {
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+
+  const totalQuestions = selectedQuestions.length;
+  const correctAnswers = score;
+  const wrongAnswers = answeredQuestions - score;
+  const skipped = totalQuestions - answeredQuestions;
+
+  const endTime = new Date();
+  const timeTaken = Math.floor((endTime - startTime) / 1000);
+  const minutes = Math.floor(timeTaken / 60);
+  const seconds = timeTaken % 60;
+
+  finalScoreElement.textContent = correctAnswers;
+  totalScoreElement.textContent = totalQuestions;
+  correctAnswersElement.textContent = correctAnswers;
+  wrongAnswersElement.textContent = wrongAnswers;
+  skippedQuestionsElement.textContent = skipped;
+  timeTakenElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+  const uniqueCategories = [...new Set(selectedQuestions.map(q => q.category))];
+  categoriesCompleted.textContent = uniqueCategories.join(', ');
+}
+</script>
+</body>
+</html>
